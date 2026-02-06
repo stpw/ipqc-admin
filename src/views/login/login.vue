@@ -24,7 +24,7 @@
 
                 </span>
                 </div>
-                <el-form :model="form" class = "w-[250px]">
+                <el-form ref = "ruleFormRef" :rules = "rules" :model="form" class = "w-[250px]">
                     <el-form-item label="賬號" prop="username">
                         <el-input v-model="form.username" placeholder="請輸入賬號">
                             <template #prefix>
@@ -35,7 +35,7 @@
                         </el-input>
                     </el-form-item>
                     <el-form-item label="密碼" prop="password">
-                        <el-input v-model="form.password" placeholder="請輸入密碼" type="password">
+                        <el-input v-model="form.password" placeholder="請輸入密碼" type="password" show-password>
                             <template #prefix>
                                 <el-icon class="text-gray-400">
                                     <Lock />
@@ -44,7 +44,7 @@
                         </el-input>
                     </el-form-item>
                     <el-form-item>
-                        <el-button round color="#626aef" class="w-[250px]" type="primary" @click="onSubmit">登入</el-button>
+                        <el-button round color="#626aef" class="w-[250px]" type="primary" @click="onSubmit(ruleFormRef)">登入</el-button>
                     </el-form-item>
 
                 </el-form>
@@ -55,13 +55,47 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
 
-const form = ref({
+interface RuleForm {
+  username: string
+  password: string
+}
+
+const form = ref<RuleForm>({
     username: '',
     password: ''
 })
 
-const onSubmit = () => {
-    console.log(form.value)
+// const form = ref({
+//     username: '',
+//     password: ''
+// })
+
+const rules = ref<FormRules<RuleForm>>({
+    username: [
+        { required: true, //必填項
+             message: '請輸入賬號', //驗證提示
+              trigger: 'blur'  //失去焦點時觸發驗證
+            }
+    ],
+    password: [
+        { required: true, message: '請輸入密碼', trigger: 'blur' }
+    ]
+})
+
+const ruleFormRef = ref<FormInstance>()
+
+const onSubmit =  async (formEl: FormInstance | undefined) => {
+  if (!formEl) return
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      console.log('submit!')
+    } else {
+      console.log('error submit!', fields)
+    }
+  })
 }
+
+
 </script>
