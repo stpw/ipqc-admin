@@ -57,17 +57,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { ElNotification } from 'element-plus'
+import { toast } from '~/composables/util'
 import { login,getinfo } from '~/api/manager'
 
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
-import { useCookies } from '@vueuse/integrations/useCookies'
-const cookies = useCookies()
+// import { useCookies } from '@vueuse/integrations/useCookies'
+// const cookies = useCookies()
 
 import { useUserStore } from '~/store'
 const userStore = useUserStore()
+
+import { setToken } from '~/composables/auth'
 
 
 const loding = ref(false)
@@ -111,16 +113,11 @@ const onSubmit = async (formEl: FormInstance | undefined) => {
             //驗證通過，提交表單
             login(form.value.username, form.value.password).then(res => {
                 //登入成功
-                ElNotification({
-                    title: 'Success',
-                    message: '登入成功',
-                    type: 'success',
-                    duration: 2000
-                })
+                toast('登入成功', 'success', 'Success')
                 console.log('submit!', fields)
 
                 //存儲cookie
-                cookies.set('admin-token', res.token)
+                setToken(res.token)
                 // 獲取用戶信息
                 getinfo().then(res => {
                     // 存儲用戶信息到store
@@ -135,15 +132,6 @@ const onSubmit = async (formEl: FormInstance | undefined) => {
                 // 登入完成，設置loading為false
                 loding.value = false
             })
-                // .catch(err => {
-                //     console.log(err)
-                //     ElNotification({
-                //         title: 'Error',
-                //         message: err.response.data.msg || "登入失敗",
-                //         type: 'error',
-                //         duration: 2000
-                //     })
-                // })
         } else {
             console.log('error submit!', fields)
         }
