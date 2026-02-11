@@ -24,7 +24,7 @@
 
                 </span>
             </div>
-            <el-form ref="ruleFormRef" :rules="rules" :model="form" class="w-[250px]">
+            <el-form ref="ruleFormRef" :rules="rules" :model="form" @keyup.enter.native="onSubmit(ruleFormRef)" class="w-[250px]">
                 <el-form-item label="賬號" prop="username">
                     <el-input v-model="form.username" placeholder="請輸入賬號">
                         <template #prefix>
@@ -45,7 +45,7 @@
                 </el-form-item>
                 <el-form-item>
                     <el-button round color="#626aef" class="w-[250px]" type="primary"
-                        @click="onSubmit(ruleFormRef)">登入</el-button>
+                        @click="onSubmit(ruleFormRef)" :loading="loding">登入</el-button>
                 </el-form-item>
 
             </el-form>
@@ -58,11 +58,19 @@
 import { ref } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElNotification } from 'element-plus'
-import { login } from '~/api/manager'
+import { login,getinfo } from '~/api/manager'
 
 import { useRouter } from 'vue-router'
-
 const router = useRouter()
+
+import { useCookies } from '@vueuse/integrations/useCookies'
+const cookies = useCookies()
+
+import { useUserStore } from '~/store'
+const userStore = useUserStore()
+
+
+const loding = ref(false)
 
 interface RuleForm {
     username: string
@@ -98,6 +106,8 @@ const onSubmit = async (formEl: FormInstance | undefined) => {
     if (!formEl) return
     await formEl.validate((valid, fields) => {
         if (valid) {
+            // 設置loading為true
+            loding.value = true
             //驗證通過，提交表單
             login(form.value.username, form.value.password).then(res => {
                 //登入成功
@@ -108,19 +118,32 @@ const onSubmit = async (formEl: FormInstance | undefined) => {
                     duration: 2000
                 })
                 console.log('submit!', fields)
+
+                //存儲cookie
+                cookies.set('admin-token', res.token)
+                // 獲取用戶信息
+                getinfo().then(res => {
+                    // 存儲用戶信息到store
+                    userStore.setUserInfo(res)
+                    console.log(userStore.userinfo)
+                })
+
                 //跳轉到首頁
                 router.push('/')
 
+            }).finally(() => {
+                // 登入完成，設置loading為false
+                loding.value = false
             })
-                .catch(err => {
-                    console.log(err)
-                    ElNotification({
-                        title: 'Error',
-                        message: err.response.data.msg || "登入失敗",
-                        type: 'error',
-                        duration: 2000
-                    })
-                })
+                // .catch(err => {
+                //     console.log(err)
+                //     ElNotification({
+                //         title: 'Error',
+                //         message: err.response.data.msg || "登入失敗",
+                //         type: 'error',
+                //         duration: 2000
+                //     })
+                // })
         } else {
             console.log('error submit!', fields)
         }
